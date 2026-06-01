@@ -1,0 +1,26 @@
+{
+    "markers": [
+      {
+        "id": "wave_01",
+        "position": {
+          "lat": 7.0982,
+          "lng": 125.6421
+        },
+        "title": "IoT Unit 1 - Water Level",
+        "risk_tier": "Safe",
+        "alert_level": 0,
+        "message": "Normal water levels"
+      },
+      {
+        "id": "wave_02",
+        "position": {
+          "lat": 7.0604,
+          "lng": 125.5947
+        },
+        "title": "IoT Unit 2 - Rainfall",
+        "risk_tier": "Alert",
+        "alert_level": 1,
+        "message": "Light rain detected"
+      }
+    ]
+  }

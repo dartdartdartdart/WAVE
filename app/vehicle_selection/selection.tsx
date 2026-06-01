@@ -1,28 +1,109 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
+import { router } from "expo-router";
 
 export default function HomeScreen() {
-  const handlePress = () => {
-    console.log("Button Pressed");
-  };
+  const vehicles = [
+    "Sedan",
+    "SUV",
+    "Truck",
+    "Motorcycle",
+    "Van",
+    "Bus",
+    "Pedestrian",
+    "Other",
+  ];
+
+  const [selectedVehicle, setSelectedVehicle] =
+    useState("Select Vehicle");
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const [customVehicle, setCustomVehicle] =
+    useState("");
+
+    const handleContinue = () => {
+      const vehicle =
+        selectedVehicle === "Other"
+          ? customVehicle
+          : selectedVehicle;
+    
+      console.log("Selected Vehicle:", vehicle);
+    
+      router.push("/destination/choose_location");
+    };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Choose Your Vehicle</Text>
-        <Text style={styles.subtitle}>
-        Select your vehicle type to calculate safe routes based on flood depth limits.
+        <Text style={styles.title}>
+          Choose Your Vehicle
         </Text>
 
-        <TouchableOpacity style={styles.button} onPress={handlePress}>
-          <Text style={styles.buttonText}>Select An Option</Text>
+        <Text style={styles.subtitle}>
+          Select your vehicle type to calculate
+          safe routes based on flood depth limits.
+        </Text>
+
+        {/* Dropdown Button */}
+        <TouchableOpacity
+          style={styles.dropdownButton}
+          onPress={() => setIsOpen(!isOpen)}
+        >
+          <Text style={styles.dropdownText}>
+            {selectedVehicle}
+          </Text>
+
+          <Text style={styles.arrow}>
+            {isOpen ? "▲" : "▼"}
+          </Text>
+        </TouchableOpacity>
+
+        
+        {isOpen && (
+          <View style={styles.dropdownMenu}>
+            {vehicles.map((vehicle) => (
+              <TouchableOpacity
+                key={vehicle}
+                style={styles.option}
+                onPress={() => {
+                  setSelectedVehicle(vehicle);
+                  setIsOpen(false);
+                }}
+              >
+                <Text style={styles.optionText}>
+                  {vehicle}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+
+        {selectedVehicle === "Other" && (
+          <TextInput
+            style={styles.input}
+            placeholder="Enter vehicle type"
+            value={customVehicle}
+            onChangeText={setCustomVehicle}
+          />
+        )}
+
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={handleContinue}
+        >
+          <Text style={styles.continueText}>
+            Continue
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -32,42 +113,101 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    marginTop: -300,
+    backgroundColor: "#F5F1EA",
   },
 
   content: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
     paddingHorizontal: 24,
   },
 
   title: {
-    fontSize: 26,
+    fontSize: 30,
+    textAlign: "center",
     fontFamily: "Roboto_700Bold",
-    marginBottom: 18,
-    textAlign: "center",
-    
+    color: "#2F4A3E",
+    marginBottom: 12,
   },
+
   subtitle: {
-    fontSize: 16,
     textAlign: "center",
+    fontSize: 16,
     color: "#666",
-    marginBottom: 24,
+    lineHeight: 24,
+    fontFamily: "Roboto_400Regular",
+    marginBottom: 30,
+  },
+
+  dropdownButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#8EF0E6",
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  dropdownText: {
+    fontSize: 16,
+    color: "#2F4A3E",
     fontFamily: "Roboto_400Regular",
   },
 
-  button: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+  arrow: {
+    fontSize: 16,
+    color: "#5AA8FF",
   },
 
-  buttonText: {
-    color: "#fff",
+  dropdownMenu: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginTop: 10,
+    overflow: "hidden",
+
+    borderWidth: 1,
+    borderColor: "#D9F7F4",
+  },
+
+  option: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+
+  optionText: {
     fontSize: 16,
-    fontWeight: "600",
+    color: "#2F4A3E",
+    fontFamily: "Roboto_400Regular",
+  },
+
+  input: {
+    marginTop: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#8EF0E6",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+  },
+
+  continueButton: {
+    marginTop: 30,
+    backgroundColor: "#5AA8FF",
+    paddingVertical: 16,
+    borderRadius: 18,
+    alignItems: "center",
+  },
+
+  continueText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "Roboto_700Bold",
   },
 });
