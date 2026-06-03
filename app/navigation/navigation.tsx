@@ -52,7 +52,34 @@ export default function NavigationScreen() {
  
   useEffect(() => {
     console.log("NAVIGATION SCREEN MOUNTED");
+  
     loadMarkers();
+  
+    const channel = supabase
+      .channel("device-live-status")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "device_live_status",
+        },
+        (payload) => {
+          console.log("REALTIME UPDATE RECEIVED");
+          console.log(payload);
+  
+          loadMarkers();
+        }
+      )
+      .subscribe((status) => {
+        console.log("REALTIME STATUS:", status);
+      });
+  
+    return () => {
+      console.log("REMOVING REALTIME CHANNEL");
+  
+      supabase.removeChannel(channel);
+    };
   }, []);
   const safeCount = markers.filter(
     m => m.risk_tier === "Safe"
