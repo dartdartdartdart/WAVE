@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
-import markerData from "../../assets/data/map_markers.json";
+
+import { supabase } from "../../lib/supabase";
 
 function getMarkerColor(tier: string): string {
   switch (tier) {
@@ -23,8 +24,59 @@ function getMarkerColor(tier: string): string {
   }
 }
 
+
+
 export default function NavigationScreen() {
+
+  async function loadMarkers() {
+    console.log("LOAD MARKERS START");
+  
+    try {
+      const { data, error } = await supabase
+        .from("map_markers")
+        .select("*");
+  
+      console.log("MARKERS:", JSON.stringify(data, null, 2));
+      console.log("MARKER ERROR:", error);
+  
+      if (data) {
+        setMarkers(data);
+      }
+    } catch (err) {
+      console.log("LOAD MARKERS CRASH:", err);
+    }
+  }
+
+  const [selectedMarker, setSelectedMarker] = useState<any>(null);
+  const [markers, setMarkers] = useState<any[]>([]);
+ 
+  useEffect(() => {
+    console.log("NAVIGATION SCREEN MOUNTED");
+    loadMarkers();
+  }, []);
+  const safeCount = markers.filter(
+    m => m.risk_tier === "Safe"
+  ).length;
+  
+  const alertCount = markers.filter(
+    m => m.risk_tier === "Alert"
+  ).length;
+  
+  const warningCount = markers.filter(
+    m => m.risk_tier === "Warning"
+  ).length;
+  
+  const criticalCount = markers.filter(
+    m => m.risk_tier === "Critical"
+  ).length;
+
+  console.log("CURRENT MARKERS STATE:", markers);
+  console.log("MARKER COUNT:", markers.length);
+
   return (
+
+
+
     <View style={styles.container}>
       <MapView
         style={styles.map}
@@ -35,6 +87,8 @@ export default function NavigationScreen() {
           longitudeDelta: 0.05,
         }}
       >
+
+        
         {/* Current Location */}
         <Marker
           coordinate={{
@@ -45,34 +99,79 @@ export default function NavigationScreen() {
         />
 
         {/* Flood Markers */}
-        {markerData.markers.map((marker: any) => (
-          <Marker
-            key={marker.id}
-            coordinate={{
-              latitude: marker.position.lat,
-              longitude: marker.position.lng,
-            }}
-            pinColor={getMarkerColor(marker.risk_tier)}
-            title={marker.title}
-            description={marker.message}
-          />
-        ))}
+        {markers.map((marker: any) => {
+  console.log("RENDERING:", marker.id);
+
+  return (
+    <Marker
+      key={marker.id}
+      coordinate={{
+        latitude: marker.lat,
+        longitude: marker.lng,
+      }}
+      pinColor={getMarkerColor(marker.risk_tier)}
+      title={marker.title}
+      description={marker.message}
+      onPress={() => setSelectedMarker(marker)}
+    />
+  );
+})}
       </MapView>
 
       {/* Status Card */}
       <View style={styles.infoCard}>
-        <Text style={styles.routeTitle}>
-          W.A.V.E. Flood Monitoring
-        </Text>
+  {selectedMarker ? (
+    <>
+      <Text style={styles.routeTitle}>
+        {selectedMarker.title}
+      </Text>
 
-        <Text style={styles.routeText}>
-          Sensors Online: {markerData.markers.length}
-        </Text>
+      <View
+  style={{
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor:
+      selectedMarker.risk_tier === "Safe"
+        ? "#4CAF50"
+        : selectedMarker.risk_tier === "Alert"
+        ? "#FFD54F"
+        : selectedMarker.risk_tier === "Warning"
+        ? "#FF9800"
+        : "#F44336",
+  }}
+>
+  <Text
+    style={{
+      color: "#fff",
+      fontWeight: "bold",
+    }}
+  >
+    {selectedMarker.risk_tier}
+  </Text>
+</View>
 
-        <Text style={styles.routeText}>
-          Status: Active
-        </Text>
-      </View>
+      <Text style={styles.routeText}>
+        Alert Level: {selectedMarker.alert_level}
+      </Text>
+
+      <Text style={styles.routeText}>
+        {selectedMarker.message}
+      </Text>
+    </>
+  ) : (
+    <>
+      <Text style={styles.routeTitle}>
+        W.A.V.E. Flood Monitoring
+      </Text>
+
+      <Text style={styles.routeText}>
+        Tap a sensor marker
+      </Text>
+    </>
+  )}
+</View>
     </View>
   );
 }
