@@ -1,9 +1,19 @@
+import * as Location from "expo-location";
+
+import { useRef } from "react";
+
+import {
+  GooglePlacesAutocomplete,
+} from "react-native-google-places-autocomplete";
+import MapViewDirections from "react-native-maps-directions";
+
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
-
 import { supabase } from "../../lib/supabase";
+
+
 
 function getMarkerColor(tier: string): string {
   switch (tier) {
@@ -95,6 +105,20 @@ export default function NavigationScreen() {
 
   const [selectedMarker, setSelectedMarker] = useState<any>(null);
   const [markers, setMarkers] = useState<any[]>([]);
+  const [location, setLocation] = useState<any>(null);
+  const [destination, setDestination] = useState<any>(null);
+
+  const mapRef = useRef<MapView>(null);
+  useEffect(() => {
+    if (!location || !mapRef.current) return;
+  
+    mapRef.current.animateToRegion({
+      latitude: location.latitude,
+      longitude: location.longitude,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    });
+  }, [location]);
  
   useEffect(() => {
     console.log("NAVIGATION SCREEN MOUNTED");
@@ -102,13 +126,13 @@ export default function NavigationScreen() {
     loadMarkers();
   
     const channel = supabase
-      .channel("device-live-status")
+      .channel("telemetry-live")
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "device_live_status",
+          table: "telemetry_readings",
         },
         (payload) => {
           console.log("REALTIME UPDATE RECEIVED");
@@ -123,10 +147,29 @@ export default function NavigationScreen() {
   
     return () => {
       console.log("REMOVING REALTIME CHANNEL");
-  
       supabase.removeChannel(channel);
     };
   }, []);
+  
+  useEffect(() => {
+    (async () => {
+      const { status } =
+        await Location.requestForegroundPermissionsAsync();
+  
+      if (status !== "granted") {
+        console.log("Location permission denied");
+        return;
+      }
+  
+      const current =
+        await Location.getCurrentPositionAsync({});
+  
+      console.log("CURRENT GPS:", current.coords);
+  
+      setLocation(current.coords);
+    })();
+  }, []);
+
   const safeCount = markers.filter(
     m => m.risk_tier === "Safe"
   ).length;
@@ -147,29 +190,77 @@ export default function NavigationScreen() {
   console.log("MARKER COUNT:", markers.length);
 
   return (
-
-
-
     <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: 7.0731,
-          longitude: 125.6128,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-      >
-
+  
+      <GooglePlacesAutocomplete
+        placeholder="Where do you want to go?"
+        fetchDetails={true}
+        onPress={(data, details = null) => {
+          if (!details) return;
         
-        {/* Current Location */}
-        <Marker
-          coordinate={{
-            latitude: 7.0731,
-            longitude: 125.6128,
-          }}
-          title="Current Location"
-        />
+          setDestination({
+            latitude: details.geometry.location.lat,
+            longitude: details.geometry.location.lng,
+          });
+        }}
+        query={{
+          key: "AIzaSyAw_KSanfyBRyW8h7RGJa28catfm0xPcrM",
+          language: "en",
+        }}
+        styles={{
+          container: {
+            position: "absolute",
+            top: 60,
+            left: 10,
+            right: 10,
+            zIndex: 999,
+            elevation: 10,
+          },
+        }}
+      />
+  
+  <MapView
+  ref={mapRef}
+  style={styles.map}
+  showsUserLocation={true}
+  followsUserLocation={true}
+
+  
+  initialRegion={{
+    latitude: location?.latitude ?? 7.0731,
+    longitude: location?.longitude ?? 125.6128,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  }}
+>
+
+{destination && ( <Marker coordinate={destination} title="Destination" pinColor="blue" /> )} 
+{location && destination && (
+  <MapViewDirections
+    origin={{
+      latitude: location.latitude,
+      longitude: location.longitude,
+    }}
+    destination={destination}
+    apikey={"AIzaSyAw_KSanfyBRyW8h7RGJa28catfm0xPcrM"}
+    strokeWidth={5}
+    onReady={(result) => {
+      mapRef.current?.fitToCoordinates(
+        result.coordinates,
+        {
+          edgePadding: {
+            top: 100,
+            right: 100,
+            bottom: 100,
+            left: 100,
+          },
+          animated: true,
+        }
+      );
+    }}
+  />
+)}
+       
 
         {/* Flood Markers */}
         {markers.map((marker: any) => {
@@ -184,7 +275,7 @@ export default function NavigationScreen() {
       }}
       pinColor={getMarkerColor(marker.risk_tier)}
       title={marker.title}
-      description={marker.message}
+      description={`Water Rise: ${(marker.water_rise_m * 100).toFixed(0)} cm`}
       onPress={() => setSelectedMarker(marker)}
     />
   );
@@ -229,7 +320,7 @@ export default function NavigationScreen() {
   Water Rise: {(selectedMarker.water_rise_m * 100).toFixed(0)} cm
 </Text>
 
-<Text style={styles.routeText}>
+    <Text style={styles.routeText}>
   Alert Level: {selectedMarker.alert_level}
 </Text>
     </>
