@@ -33,15 +33,63 @@ export default function NavigationScreen() {
   
     try {
       const { data, error } = await supabase
-        .from("map_markers")
-        .select("*");
+        .from("telemetry_readings")
+        .select("*")
+        .order("recorded_at", { ascending: false });
   
-      console.log("MARKERS:", JSON.stringify(data, null, 2));
-      console.log("MARKER ERROR:", error);
-  
-      if (data) {
-        setMarkers(data);
+      if (error) {
+        console.log("MARKER ERROR:", error);
+        return;
       }
+  
+      const latestDevices = new Map();
+  
+      data?.forEach((row) => {
+        if (!latestDevices.has(row.device_id)) {
+          latestDevices.set(row.device_id, row);
+        }
+      });
+  
+      const telemetryMarkers = [
+        {
+          id: "wave_01",
+          lat: 7.0982,
+          lng: 125.6421,
+          title: "IoT Unit 1 - Water Level",
+        },
+        {
+          id: "wave_02",
+          lat: 7.0604,
+          lng: 125.5947,
+          title: "IoT Unit 2 - Rainfall",
+        },
+      ].map((marker) => {
+        const live = latestDevices.get(marker.id);
+  
+        return {
+          ...marker,
+          risk_tier: live?.tier_level ?? "Safe",
+          alert_level:
+            live?.tier_level === "Critical"
+              ? 3
+              : live?.tier_level === "Warning"
+              ? 2
+              : live?.tier_level === "Alert"
+              ? 1
+              : 0,
+          message: live
+            ? `Water Rise: ${live.water_rise_m}m`
+            : "No telemetry",
+        };
+      });
+  
+      console.log(
+        "TELEMETRY MARKERS:",
+        telemetryMarkers
+      );
+  
+      setMarkers(telemetryMarkers);
+  
     } catch (err) {
       console.log("LOAD MARKERS CRASH:", err);
     }
