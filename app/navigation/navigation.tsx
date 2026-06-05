@@ -69,6 +69,7 @@ export default function NavigationScreen() {
         return {
           ...marker,
           risk_tier: live?.tier_level ?? "Safe",
+          water_rise_m: live?.water_rise_m ?? 0,
           alert_level:
             live?.tier_level === "Critical"
               ? 3
@@ -77,9 +78,6 @@ export default function NavigationScreen() {
               : live?.tier_level === "Alert"
               ? 1
               : 0,
-          message: live
-            ? `Water Rise: ${live.water_rise_m}m`
-            : "No telemetry",
         };
       });
   
@@ -227,13 +225,13 @@ export default function NavigationScreen() {
   </Text>
 </View>
 
-      <Text style={styles.routeText}>
-        Alert Level: {selectedMarker.alert_level}
-      </Text>
+<Text style={styles.routeText}>
+  Water Rise: {(selectedMarker.water_rise_m * 100).toFixed(0)} cm
+</Text>
 
-      <Text style={styles.routeText}>
-        {selectedMarker.message}
-      </Text>
+<Text style={styles.routeText}>
+  Alert Level: {selectedMarker.alert_level}
+</Text>
     </>
   ) : (
     <>
