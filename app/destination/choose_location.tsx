@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import * as Location from "expo-location";
@@ -93,7 +93,12 @@ export default function ChooseLocation() {
 
     console.log("Destination:", destination);
 
-    router.push("/loading/loading");
+    router.push({
+      pathname: "/loading/loading",
+      params: {
+        destination: destination,
+      },
+    });
   };
 
   return (

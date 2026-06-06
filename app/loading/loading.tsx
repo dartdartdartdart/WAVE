@@ -1,22 +1,33 @@
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
-import { router } from "expo-router";
+import {
+  router,
+  useLocalSearchParams,
+} from "expo-router";
 
 export default function LoadingScreen() {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/navigation/navigation");
-    }, 3000);
+  const { destination } =
+    useLocalSearchParams();
 
-    return () => clearTimeout(timer);
-  }, []);
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        router.replace({
+          pathname: "/navigation/navigation",
+          params: {
+            destination,
+          },
+        });
+      }, 3000);
+    
+      return () => clearTimeout(timer);
+    }, [destination]);
 
   return (
     <SafeAreaView style={styles.container}>
