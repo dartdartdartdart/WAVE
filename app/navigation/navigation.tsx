@@ -161,8 +161,8 @@ export default function NavigationScreen() {
         },
         {
           id: "wave_02",
-          lat: 7.0604,
-          lng: 125.5947,
+          lat: 7.0505,
+          lng: 125.5985,
           title: "IoT Unit 2 - Rainfall",
         },
       ].map((marker) => {
@@ -897,6 +897,7 @@ onPress={() => {
       <GooglePlacesAutocomplete
         placeholder="Where do you want to go?"
         fetchDetails={true}
+        
         onPress={(data, details = null) => {
           console.log("PLACE PRESSED");
         
@@ -913,6 +914,8 @@ onPress={() => {
             latitude: details.geometry.location.lat,
             longitude: details.geometry.location.lng,
           };
+          
+          
         
           console.log(
             "SETTING DESTINATION:",
@@ -924,7 +927,11 @@ onPress={() => {
         query={{
           key: "AIzaSyAw_KSanfyBRyW8h7RGJa28catfm0xPcrM",
           language: "en",
+          location: "7.0731,125.6128",
+          radius: "30000",
         }}
+
+
         styles={{
           container: {
             position: "absolute",
@@ -934,14 +941,16 @@ onPress={() => {
             zIndex: 999,
             elevation: 10,
           },
+          
         }}
+        
       />
   
   <MapView
   ref={mapRef}
   style={styles.map}
   showsUserLocation={true}
-  followsUserLocation={true}
+  followsUserLocation={false}
 
   
   initialRegion={{

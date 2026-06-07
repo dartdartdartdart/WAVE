@@ -194,6 +194,39 @@ export default function ChooseLocation() {
             Analyze Route
           </Text>
         </TouchableOpacity>
+        <View style={styles.navigationRow}>
+
+  <TouchableOpacity
+    onPress={() => router.back()}
+  >
+    <Text style={styles.navText}>
+      Prev
+    </Text>
+  </TouchableOpacity>
+
+  <View style={styles.paginationContainer}>
+    <View style={styles.dot} />
+    <View style={styles.dot} />
+    <View style={styles.dot} />
+    <View style={styles.dot} />
+    <View style={styles.activeDot} />
+  </View>
+
+  <TouchableOpacity
+    disabled={!destination}
+    onPress={handleAnalyzeRoute}
+  >
+    <Text
+      style={[
+        styles.navText,
+        !destination && styles.disabledText,
+      ]}
+    >
+      Analyze
+    </Text>
+  </TouchableOpacity>
+
+</View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -325,5 +358,44 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontFamily: "Roboto_700Bold",
+  },
+  navigationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "90%",
+    alignSelf: "center",
+    marginTop: 25,
+  },
+  
+  paginationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#D3D3D3",
+    marginHorizontal: 4,
+  },
+  
+  activeDot: {
+    width: 30,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#1E2947",
+    marginHorizontal: 4,
+  },
+  
+  navText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FF6B81",
+  },
+  
+  disabledText: {
+    opacity: 0.4,
   },
 });

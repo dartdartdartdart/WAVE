@@ -30,16 +30,16 @@ export default function HomeScreen() {
   const [customVehicle, setCustomVehicle] =
     useState("");
 
-    const handleContinue = () => {
-      const vehicle =
-        selectedVehicle === "Other"
-          ? customVehicle
-          : selectedVehicle;
-    
-      console.log("Selected Vehicle:", vehicle);
-    
-      router.push("/destination/choose_location");
-    };
+  const handleContinue = () => {
+    const vehicle =
+      selectedVehicle === "Other"
+        ? customVehicle
+        : selectedVehicle;
+
+    console.log("Selected Vehicle:", vehicle);
+
+    router.push("/destination/choose_location");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -53,7 +53,6 @@ export default function HomeScreen() {
           safe routes based on flood depth limits.
         </Text>
 
-        {/* Dropdown Button */}
         <TouchableOpacity
           style={styles.dropdownButton}
           onPress={() => setIsOpen(!isOpen)}
@@ -67,7 +66,6 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        
         {isOpen && (
           <View style={styles.dropdownMenu}>
             {vehicles.map((vehicle) => (
@@ -87,7 +85,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-
         {selectedVehicle === "Other" && (
           <TextInput
             style={styles.input}
@@ -105,6 +102,34 @@ export default function HomeScreen() {
             Continue
           </Text>
         </TouchableOpacity>
+
+        <View style={styles.navigationRow}>
+
+          <TouchableOpacity
+            onPress={() => router.back()}
+          >
+            <Text style={styles.navText}>
+              Prev
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.paginationContainer}>
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+            <View style={styles.activeDot} />
+          </View>
+
+          <TouchableOpacity
+            onPress={handleContinue}
+          >
+            <Text style={styles.navText}>
+              Continue
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+
       </View>
     </SafeAreaView>
   );
@@ -209,5 +234,41 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontFamily: "Roboto_700Bold",
+  },
+
+  navigationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "85%",
+    alignSelf: "center",
+    marginTop: 25,
+  },
+
+  paginationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#D3D3D3",
+    marginHorizontal: 4,
+  },
+
+  activeDot: {
+    width: 30,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#1E2947",
+    marginHorizontal: 4,
+  },
+
+  navText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FF6B81",
   },
 });

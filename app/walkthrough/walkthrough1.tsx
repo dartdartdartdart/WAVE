@@ -1,17 +1,17 @@
 import {
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
   
   import { router } from "expo-router";
 
   import {
-    Roboto_400Regular,
-    Roboto_700Bold,
-    useFonts,
+  Roboto_400Regular,
+  Roboto_700Bold,
+  useFonts,
 } from "@expo-google-fonts/roboto";
 
 
@@ -69,7 +69,27 @@ import {
             NEXT
           </Text>
         </TouchableOpacity>
-  
+        <View style={styles.navigationRow}>
+
+<Text style={[styles.navText, styles.disabledText]}>
+  Prev
+</Text>
+
+<View style={styles.paginationContainer}>
+  <View style={styles.activeDot} />
+  <View style={styles.dot} />
+  <View style={styles.dot} />
+</View>
+
+<TouchableOpacity
+  onPress={() => router.push("/walkthrough/walkthrough2")}
+>
+  <Text style={styles.navText}>
+    Next
+  </Text>
+</TouchableOpacity>
+
+</View>
       </View>
       
     );
@@ -154,5 +174,45 @@ import {
       fontSize: 20,
       fontWeight: "600",
       color: "#2F4A3E",
+    },paginationContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 0,
     },
+    
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "#D3D3D3",
+      marginHorizontal: 4,
+    },
+    
+    activeDot: {
+      width: 30,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "#1E2947",
+    },
+    
+    navigationRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      width: "85%",
+      marginTop: 20,
+    },
+    
+    
+    navText: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: "#FF6B81",
+    },
+    
+    disabledText: {
+      color: "#CFCFCF",
+    },
+
   });
