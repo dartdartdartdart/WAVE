@@ -1,26 +1,20 @@
 import * as Location from "expo-location";
-
 import { useRef } from "react";
+import RouteBottomSheet from "./components/RouteBottomSheet";
 
-import {
-  GooglePlacesAutocomplete,
-} from "react-native-google-places-autocomplete";
-import MapViewDirections from "react-native-maps-directions";
-
+import polyline from "@mapbox/polyline";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Modal,
   StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
+import MapViewDirections from "react-native-maps-directions";
 import { supabase } from "../../lib/supabase";
+import SensorInfoCard from "./components/SensorInfoCard";
 
-import polyline from "@mapbox/polyline";
-
+import NavigationSearchBar from "./components/NavigationSearchBar";
 
 function getMarkerColor(tier: string): string {
   switch (tier) {
@@ -197,11 +191,14 @@ export default function NavigationScreen() {
   }
 
   const [selectedMarker, setSelectedMarker] = useState<any>(null);
+  
   const [
     selectedRouteCoordinates,
     setSelectedRouteCoordinates,
   ] = useState<any[]>([]);
   const [markers, setMarkers] = useState<any[]>([]);
+  const [hasViewedAlternatives, setHasViewedAlternatives] =
+  useState(false);
   const [location, setLocation] = useState<any>(null);
   const [destination, setDestination] = useState<any>(null);
   const [alternativeRouteRisks, setAlternativeRouteRisks] =
@@ -226,11 +223,113 @@ const [routeCoordinates, setRouteCoordinates] =
   useState(false);
   const [alternativeRoutes, setAlternativeRoutes] =
   useState<any[]>([]);
+  const [isExpanded, setIsExpanded] =
+  useState(false);
   const [
     selectedRoute,
     setSelectedRoute,
   ] = useState<any>(null);
+  // =========================================
+// TRACKING MODE STATES
+// =========================================
+
+type TrackingSheetState =
+| "peek"
+| "half"
+| "full";
+
+const [isNavigating, setIsNavigating] =
+useState(false);
+const [
+  trackingState,
+  setTrackingState,
+] = useState<TrackingSheetState>(
+  "full"
+);
+
+
+  const handleRouteSelect = (route: any) => {
+    console.log(
+      "SELECTED ROUTE:",
+      route.summary
+    );
   
+
+
+    const decoded =
+      polyline.decode(
+        route.routeData
+          .overview_polyline
+          .points
+      );
+  
+    const coordinates =
+      decoded.map(
+        ([lat, lng]) => ({
+          latitude: lat,
+          longitude: lng,
+        })
+      );
+  
+    console.log(
+      "SELECTED ROUTE POINTS:",
+      coordinates.length
+    );
+  
+    setSelectedRoute(route);
+    setIsExpanded(false);
+  
+    setSelectedRouteCoordinates(
+      coordinates
+    );
+  
+    mapRef.current?.fitToCoordinates(
+      coordinates,
+      {
+        edgePadding: {
+          top: 100,
+          right: 100,
+          bottom: 100,
+          left: 100,
+        },
+        animated: true,
+      }
+    );
+   
+    //setHasViewedAlternatives(false);
+
+    
+   
+  };
+
+
+// =========================================
+// NAVIGATION LIFECYCLE
+// =========================================
+
+const handleStartNavigation = () => {
+  setTrackingState("peek");
+
+  setIsNavigating(true);
+
+  // Future:
+  // fit map
+  // ETA updates
+  // rerouting
+};
+
+const handleEndNavigation = () => {
+  setIsNavigating(false);
+
+  setShowFloodModal(false);
+
+  setHasViewedAlternatives(false);
+
+  setIsExpanded(false);
+
+  setTrackingState("peek");
+};
+
   async function fetchAlternativeRoutes() {
     if (!location || !destination) {
       return;
@@ -402,6 +501,11 @@ console.log(
     );
   }, [alternativeRoutes]);
   useEffect(() => {
+    console.log(
+      "ANALYSIS EFFECT RUNNING",
+      routeCoordinates.length,
+      markers.length
+    );
     if (
       routeCoordinates.length === 0 ||
       markers.length === 0
@@ -633,318 +737,51 @@ if (highestRisk !== "Safe") {
   console.log(
     "SHOW FLOOD MODAL STATE:",
     showFloodModal
+    
   );
+  console.log(
+    "SHOW FLOOD MODAL STATE:",
+    showFloodModal
+  );
+  
   return (
     <View style={styles.container}>
-  <Modal
-  visible={showFloodModal}
-  transparent
-  animationType="fade"
->
-  <View
-    style={{
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "rgba(0,0,0,0.5)",
-    }}
-  >
-    <View
-      style={{
-        width: "85%",
-        backgroundColor: "white",
-        borderRadius: 16,
-        padding: 20,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 20,
-          fontWeight: "bold",
-          marginBottom: 10,
-        }}
-      >
-        ⚠ Flood Risk Detected
-      </Text>
+     
 
-      <Text>
-  Current Route Risk: {routeRisk}
-</Text>
 
-<Text
-  style={{
-    marginTop: 10,
-  }}
->
-  This route passes near a monitored flood zone.
-</Text>
-<TouchableOpacity
-  onPress={() => {
+        <NavigationSearchBar
+        
+  onPlaceSelected={(newDestination) => {
+    setDestination(newDestination);
+  
+    setSelectedRoute(null);
+  
+    setSelectedRouteCoordinates([]);
+  
+    setRouteCoordinates([]);
+  
+    setAlternativeRoutes([]);
+  
+    setAlternativeRouteRisks([]);
+  
+    setRecommendedRoute(null);
+  
+    setSameRiskRoutes(false);
+  
     setShowFloodModal(true);
+  
+    mapRef.current?.animateToRegion({
+      latitude: newDestination.latitude,
+      longitude: newDestination.longitude,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    });
   }}
-  style={{
-    marginTop: 10,
-    backgroundColor: "#1976D2",
-    padding: 10,
-    borderRadius: 8,
-  }}
->
-  <Text
-    style={{
-      color: "white",
-      textAlign: "center",
-      fontWeight: "bold",
-    }}
-  >
-    Change Route
-  </Text>
-</TouchableOpacity>
+    />
 
-<Text
-  style={{
-    marginTop: 10,
-  }}
->
-  An alternative route may be available.
-</Text>
-{alternativeRouteRisks.length > 0 && (
-  <View style={{ marginTop: 20 }}>
-    <Text
-      style={{
-        fontWeight: "bold",
-        marginBottom: 10,
-      }}
-    >
-      Alternative Routes
-    </Text>
+  
 
-    {alternativeRouteRisks.map(
-      (route: any, index: number) => (
-        <View
-          key={index}
-          style={{
-            marginBottom: 10,
-          }}
-        >
-          <Text>
-            Route {index + 1}
-          </Text>
-
-          <Text>
-            {route.summary}
-          </Text>
-
-          <Text>
-            Risk: {route.risk}
-          </Text>
-
-          <TouchableOpacity
-onPress={() => {
-
-  console.log(
-    "SELECTED ROUTE:",
-    route.summary
-  );
-
-  const decoded =
-    polyline.decode(
-      route.routeData
-        .overview_polyline
-        .points
-    );
-
-  const coordinates =
-    decoded.map(
-      ([lat, lng]) => ({
-        latitude: lat,
-        longitude: lng,
-      })
-    );
-
-  console.log(
-    "SELECTED ROUTE POINTS:",
-    coordinates.length
-  );
-
-  setSelectedRoute(route);
-
-  setSelectedRouteCoordinates(
-    coordinates
-  );
-  mapRef.current?.fitToCoordinates(
-    coordinates,
-    {
-      edgePadding: {
-        top: 100,
-        right: 100,
-        bottom: 100,
-        left: 100,
-      },
-      animated: true,
-    }
-  );
-  setShowFloodModal(false);
-}}
-
-
-  style={{
-    marginTop: 5,
-    backgroundColor: "#1976D2",
-    padding: 8,
-    borderRadius: 6,
-  }}
->
-  <Text
-    style={{
-      color: "white",
-      textAlign: "center",
-    }}
-  >
-    Select Route
-  </Text>
-</TouchableOpacity>
-        </View>
-      )
-    )}
-  </View>
-)}
-
-{sameRiskRoutes ? (
-  <View
-    style={{
-      marginTop: 15,
-      padding: 10,
-      backgroundColor: "#FFF3CD",
-      borderRadius: 8,
-    }}
-  >
-    <Text>
-      All available routes currently
-      have the same flood risk level.
-    </Text>
-  </View>
-) : (
-  recommendedRoute && (
-    <View
-      style={{
-        marginTop: 15,
-        padding: 10,
-        backgroundColor: "#E3F2FD",
-        borderRadius: 8,
-      }}
-    >
-      <Text
-        style={{
-          fontWeight: "bold",
-        }}
-      >
-        Recommended Route
-      </Text>
-
-      <Text>
-        {recommendedRoute.summary}
-      </Text>
-
-      <Text>
-        Risk: {recommendedRoute.risk}
-      </Text>
-    </View>
-  )
-)}
-<TouchableOpacity
-  style={{
-    marginTop: 20,
-    backgroundColor: "#1976D2",
-    padding: 12,
-    borderRadius: 8,
-  }}
-  onPress={fetchAlternativeRoutes}
->
-
-        <Text
-          style={{
-            color: "white",
-            textAlign: "center",
-          }}
-        >
-          View Alternatives
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{
-          marginTop: 10,
-          backgroundColor: "#666",
-          padding: 12,
-          borderRadius: 8,
-        }}
-        onPress={() => {
-          setShowFloodModal(false);
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            textAlign: "center",
-          }}
-        >
-          Continue Current Route
-        </Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
-      <GooglePlacesAutocomplete
-        placeholder="Where do you want to go?"
-        fetchDetails={true}
-        
-        onPress={(data, details = null) => {
-          console.log("PLACE PRESSED");
-        
-          console.log("DATA:", data);
-        
-          console.log("DETAILS:", details);
-        
-          if (!details) {
-            console.log("DETAILS IS NULL");
-            return;
-          }
-        
-          const newDestination = {
-            latitude: details.geometry.location.lat,
-            longitude: details.geometry.location.lng,
-          };
-          
-          
-        
-          console.log(
-            "SETTING DESTINATION:",
-            newDestination
-          );
-        
-          setDestination(newDestination);
-        }}
-        query={{
-          key: "AIzaSyAw_KSanfyBRyW8h7RGJa28catfm0xPcrM",
-          language: "en",
-          location: "7.0731,125.6128",
-          radius: "30000",
-        }}
-
-
-        styles={{
-          container: {
-            position: "absolute",
-            top: 60,
-            left: 10,
-            right: 10,
-            zIndex: 999,
-            elevation: 10,
-          },
-          
-        }}
-        
-      />
+      
   
   <MapView
   ref={mapRef}
@@ -990,6 +827,9 @@ onPress={() => {
         console.log(
           "ROUTE COORDINATES COUNT:",
           result.coordinates.length
+        );
+        console.log(
+          "MAPVIEW DIRECTIONS READY"
         );
         setRouteCoordinates(result.coordinates);
 
@@ -1069,91 +909,52 @@ console.log(
       onPress={() => setSelectedMarker(marker)}
     />
   );
-})}
-      </MapView>
+})}</MapView>
 
+<SensorInfoCard
+  selectedMarker={selectedMarker}
+/>
 
+<RouteBottomSheet
+  visible={showFloodModal}
+  routeRisk={routeRisk}
+  sameRiskRoutes={sameRiskRoutes}
+  recommendedRoute={recommendedRoute}
+  alternativeRouteRisks={alternativeRouteRisks}
+  selectedRoute={selectedRoute}
+  selectedMarker={selectedMarker}
+  hasViewedAlternatives={hasViewedAlternatives}
+  isExpanded={isExpanded}
+  onClose={() =>
+    setShowFloodModal(false)
+  }
+  onViewAlternatives={() => {
+    fetchAlternativeRoutes();
 
-      {routeRisk !== "Safe" && (
-  <View
-    style={[
-      styles.warningCard,
-      routeRisk === "Alert"
-        ? styles.alertCard
-        : routeRisk === "Warning"
-        ? styles.warningLevelCard
-        : styles.criticalCard,
-    ]}
-  >
-   <Text style={styles.warningTitle}>
-  ⚠ Flood Risk Detected
-</Text>
+    setHasViewedAlternatives(true);
 
-<Text style={styles.warningText}>
-  Current Route Risk: {routeRisk}
-</Text>
-
-<Text style={styles.warningText}>
-  This route passes near a monitored flood zone.
-</Text>
-  </View>
-)}
-
-<View style={styles.infoCard}>
-  {selectedMarker ? (
-    <>
-      <Text style={styles.routeTitle}>
-        {selectedMarker.title}
-      </Text>
-
-      <View
-  style={{
-    marginTop: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor:
-      selectedMarker.risk_tier === "Safe"
-        ? "#4CAF50"
-        : selectedMarker.risk_tier === "Alert"
-        ? "#FFD54F"
-        : selectedMarker.risk_tier === "Warning"
-        ? "#FF9800"
-        : "#F44336",
+    setIsExpanded(true);
   }}
->
-  <Text
-    style={{
-      color: "#fff",
-      fontWeight: "bold",
-    }}
-  >
-    {selectedMarker.risk_tier}
-  </Text>
+  onRouteSelect={handleRouteSelect}
+  onChangeRoute={() =>
+    setIsExpanded(true)
+  }
+
+  // NEW
+  isNavigating={isNavigating}
+  trackingState={trackingState}
+  onTrackingStateChange={setTrackingState}
+  onStartNavigation={
+    handleStartNavigation
+  }
+  onEndNavigation={
+    handleEndNavigation
+  }
+
+/>
+
 </View>
-
-<Text style={styles.routeText}>
-  Water Rise: {(selectedMarker.water_rise_m * 100).toFixed(0)} cm
-</Text>
-
-    <Text style={styles.routeText}>
-  Alert Level: {selectedMarker.alert_level}
-</Text>
-    </>
-  ) : (
-    <>
-      <Text style={styles.routeTitle}>
-        W.A.V.E. Flood Monitoring
-      </Text>
-
-      <Text style={styles.routeText}>
-        Tap a sensor marker
-      </Text>
-    </>
-  )}
-</View>
-    </View>
-  );
+);
 }
 
 const styles = StyleSheet.create({
@@ -1188,36 +989,5 @@ const styles = StyleSheet.create({
     marginTop: 5,
     color: "#666",
   },
-  warningCard: {
-    position: "absolute",
-    top: 120,
-    left: 20,
-    right: 20,
-    padding: 15,
-    borderRadius: 10,
-    elevation: 5,
-    zIndex: 1000,
-  },
   
-  alertCard: {
-    backgroundColor: "#FFD54F",
-  },
-  
-  warningLevelCard: {
-    backgroundColor: "#FF9800",
-  },
-  
-  criticalCard: {
-    backgroundColor: "#F44336",
-  },
-  
-  warningTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  
-  warningText: {
-    fontSize: 14,
-  },
 });
