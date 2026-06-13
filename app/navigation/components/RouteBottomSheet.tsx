@@ -1,6 +1,7 @@
 import React, {
   useEffect,
   useRef,
+  useState,
 } from "react";
 
 import {
@@ -16,17 +17,29 @@ import {
 const { height: SCREEN_HEIGHT } =
   Dimensions.get("window");
 
-const TRACKING_PEEK_HEIGHT = 140;
+const TRACKING_PEEK_HEIGHT = 220;
 
 const TRACKING_HALF_HEIGHT = 320;
 
 const TRACKING_FULL_HEIGHT =
   SCREEN_HEIGHT * 0.85;
 
+  const FLOOD_PEEK_HEIGHT = 220;
+
+const FLOOD_HALF_HEIGHT = 380;
+
+const FLOOD_FULL_HEIGHT =
+  SCREEN_HEIGHT * 0.80;
+
 import RecommendedRoute from "./RecommendedRoute";
 import RouteCard from "./RouteCard";
 
 type TrackingSheetState =
+  | "peek"
+  | "half"
+  | "full";
+
+  type FloodSheetState =
   | "peek"
   | "half"
   | "full";
@@ -68,6 +81,13 @@ type Props = {
   onRouteSelect: (route: any) => void;
 
   onChangeRoute: () => void;
+
+  isLiveSharing: boolean;
+
+setIsLiveSharing:
+  React.Dispatch<
+    React.SetStateAction<boolean>
+  >;
 };
 
 
@@ -87,13 +107,19 @@ export default function RouteBottomSheet({
   trackingState,
   onTrackingStateChange,
   
+  
   onStartNavigation,
   onEndNavigation,
   
   onClose,
+
   onViewAlternatives,
   onRouteSelect,
   onChangeRoute,
+  
+  isLiveSharing,
+  setIsLiveSharing,
+  
   }: Props){
 
     const animatedHeight = useRef(
@@ -101,6 +127,11 @@ export default function RouteBottomSheet({
         TRACKING_PEEK_HEIGHT
       )
     ).current;
+
+    const dragStartHeight =
+  useRef(TRACKING_PEEK_HEIGHT);
+
+
 
     const panResponder = useRef(
       PanResponder.create({
@@ -113,31 +144,31 @@ export default function RouteBottomSheet({
           );
         },
 
+        onPanResponderGrant: () => {
+          dragStartHeight.current =
+            (animatedHeight as any).__getValue();
+        },
+    
+        
+
+        
+
 
     
         onPanResponderMove: (
           _,
           gestureState
         ) => {
-          let baseHeight;
-        
-          if (trackingState === "peek") {
-            baseHeight =
-              TRACKING_PEEK_HEIGHT;
-          } else if (
-            trackingState === "half"
-          ) {
-            baseHeight =
-              TRACKING_HALF_HEIGHT;
-          } else {
-            baseHeight =
-              TRACKING_FULL_HEIGHT;
-          }
-        
+          const baseHeight =
+          dragStartHeight.current;
+
+      
+       
           const nextHeight =
-            baseHeight - gestureState.dy;
-        
+          baseHeight - gestureState.dy;
           const clampedHeight =
+
+
             Math.max(
               TRACKING_PEEK_HEIGHT,
               Math.min(
@@ -145,7 +176,7 @@ export default function RouteBottomSheet({
                 TRACKING_FULL_HEIGHT
               )
             );
-        
+  
           animatedHeight.setValue(
             clampedHeight
           );
@@ -187,6 +218,10 @@ export default function RouteBottomSheet({
       })
     ).current;
 
+   
+
+    
+
     useEffect(() => {
       let targetHeight;
     
@@ -207,12 +242,138 @@ export default function RouteBottomSheet({
         animatedHeight,
         {
           toValue: targetHeight,
+      
+          damping: 22,
+      
+          stiffness: 220,
+      
+          mass: 0.9,
+      
           useNativeDriver: false,
         }
       ).start();
+
+
+
     }, [trackingState]);
     
- 
+    const [
+      floodSheetState,
+      setFloodSheetState,
+    ] = useState<FloodSheetState>("half");
+
+    const floodAnimatedHeight =
+  useRef(
+    new Animated.Value(
+      FLOOD_HALF_HEIGHT
+    )
+  ).current;
+
+  const floodDragStartHeight =
+  useRef(FLOOD_HALF_HEIGHT);
+
+  const floodPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (
+        _,
+        gestureState
+      ) => {
+        return (
+          Math.abs(gestureState.dy) > 10
+        );
+      },
+
+      onPanResponderGrant: () => {
+        floodDragStartHeight.current =
+          (floodAnimatedHeight as any).__getValue();
+      },
+
+  
+  
+      onPanResponderMove: (
+        _,
+        gestureState
+      ) => {
+        const baseHeight =
+        floodDragStartHeight.current;
+          const nextHeight =
+            baseHeight - gestureState.dy;
+          
+          const clampedHeight =
+            Math.max(
+
+            FLOOD_PEEK_HEIGHT,
+            Math.min(
+              nextHeight,
+              FLOOD_FULL_HEIGHT
+            )
+          );
+          
+          
+  
+        floodAnimatedHeight.setValue(
+          clampedHeight
+        );
+      },
+  
+      onPanResponderRelease: (
+        _,
+        gestureState
+      ) => {
+        const dragThreshold = 50;
+  
+        if (floodSheetState === "peek") {
+          if (
+            gestureState.dy <
+            -dragThreshold
+          ) {
+            setFloodSheetState(
+              "half"
+            );
+          }
+  
+          return;
+        }
+  
+        if (floodSheetState === "half") {
+          if (
+            gestureState.dy <
+            -dragThreshold
+          ) {
+            setFloodSheetState(
+              "full"
+            );
+          } else if (
+            gestureState.dy >
+            dragThreshold
+          ) {
+            setFloodSheetState(
+              "peek"
+            );
+          }
+  
+          return;
+        }
+  
+        if (floodSheetState === "full") {
+          if (
+            gestureState.dy >
+            dragThreshold
+          ) {
+            setFloodSheetState(
+              "half"
+            );
+          }
+  
+          return;
+        }
+      },
+    })
+  ).current;
+
+
+
+
 /*
   const panResponder = useRef(
     PanResponder.create({
@@ -270,26 +431,25 @@ const getRiskColor = (
 
 
 if (isNavigating) {
- 
-  
+  const risk =
+  selectedRoute?.risk ?? "Safe";
   const leg =
   selectedRoute?.routeData?.legs?.[0];
 
-const durationText =
-  leg?.duration?.text ??
-  "-- mins";
+const isCalculating = !selectedRoute;
 
-const distanceText =
-  leg?.distance?.text ??
-  "-- km";
+const durationText = isCalculating
+  ? "Calculating route..."
+  : leg?.duration?.text ?? "";
 
-const summary =
-  selectedRoute?.summary ??
-  "Unknown Route";
+const distanceText = isCalculating
+  ? "Getting ETA and distance..."
+  : `${leg?.distance?.text ?? ""} remaining`;
 
-const risk =
-  selectedRoute?.risk ??
-  "Unknown";
+const summary = isCalculating
+  ? "Preparing navigation..."
+  : selectedRoute.summary;
+
 
 return (
   <Animated.View
@@ -345,49 +505,61 @@ return (
       {summary}
 
     </Text>
-   {/* HALF */}
-{trackingState === "half" && (
-  <>
-    <View style={styles.buttonRow}>
-      <TouchableOpacity
-        style={[
-          styles.secondaryButton,
-          styles.flexButton,
-        ]}
-        onPress={onEndNavigation}
-      >
-        <Text style={styles.buttonText}>
-          End Navigation
-        </Text>
-      </TouchableOpacity>
+{/* ALWAYS SHOW ACTIONS */}
+<View style={styles.buttonRow}>
+  <TouchableOpacity
+    style={[
+      styles.secondaryButton,
+      styles.flexButton,
+    ]}
+    onPress={onEndNavigation}
+  >
+    <Text style={styles.buttonText}>
+      End Navigation
+    </Text>
+  </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[
-          styles.primaryButton,
-          styles.flexButton,
-        ]}
-        onPress={() => {
-          onEndNavigation();
-        
-          onChangeRoute();
-        }}
-      >
-        <Text style={styles.buttonText}>
-          Change Route
-        </Text>
-      </TouchableOpacity>
-    </View>
-  </>
-)}
+  <TouchableOpacity
+    style={[
+      styles.primaryButton,
+      styles.flexButton,
+    ]}
+    onPress={onChangeRoute}
+  >
+    <Text style={styles.buttonText}>
+      Change Route
+    </Text>
+  </TouchableOpacity>
+</View>
+<TouchableOpacity
+  style={styles.liveShareButton}
+  onPress={() =>
+    setIsLiveSharing(prev => !prev)
+  }
+>
+  <Text style={styles.liveShareText}>
+    {isLiveSharing
+      ? "🟢 Live Share ON"
+      : "🔴 Live Share OFF"}
+  </Text>
+</TouchableOpacity>
+
+
+
+
   {trackingState === "full" && (
 
 <ScrollView
   showsVerticalScrollIndicator={false}
-  style={{ marginTop: 20 }}
+  style={{
+    marginTop: 20,
+    flex: 1,
+  }}
   contentContainerStyle={{
     paddingBottom: 40,
   }}
 >
+
     <Text style={styles.sectionTitle}>
       Currently Selected Route
     </Text>
@@ -469,17 +641,7 @@ return (
       </Text>
     )}
 
-    <TouchableOpacity
-      style={[
-        styles.primaryButton,
-        { marginTop: 25 },
-      ]}
-      onPress={onEndNavigation}
-    >
-      <Text style={styles.buttonText}>
-        End Navigation
-      </Text>
-    </TouchableOpacity>
+   
   </ScrollView>
 )}
    
@@ -507,28 +669,24 @@ const isCollapsedState =
 hasViewedAlternatives &&
 !isExpanded;
 
-  const sheetHeight =
-  isInitialState
-    ? 380
-    : isExpandedState
-    ? 450
-    : 220;
 
     
     const leg =
     selectedRoute?.routeData?.legs?.[0];
 return (
-  <View
+  <Animated.View
   style={[
     styles.sheet,
     {
-      height: sheetHeight,
+      height: floodAnimatedHeight,
     },
   ]}
 >
-  
 
-  <View style={styles.handleContainer}>
+<View
+  style={styles.handleContainer}
+  {...floodPanResponder.panHandlers}
+>
   <View style={styles.handle} />
 </View>
 <ScrollView
@@ -727,7 +885,7 @@ return (
 
       </ScrollView>
    
-    </View> 
+    </Animated.View> 
   );
 }
 
@@ -941,5 +1099,28 @@ const styles = StyleSheet.create({
     padding: 12,
   
     marginTop: 5,
+  },
+  liveShareButton: {
+    marginTop: 12,
+  
+    paddingVertical: 12,
+  
+    borderRadius: 12,
+  
+    alignItems: "center",
+  
+    backgroundColor: "#F3F4F6",
+  
+    borderWidth: 1,
+  
+    borderColor: "#E5E7EB",
+  },
+  
+  liveShareText: {
+    fontSize: 15,
+  
+    fontWeight: "700",
+  
+    color: "#374151",
   },
 });

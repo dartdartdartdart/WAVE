@@ -6,8 +6,10 @@ import polyline from "@mapbox/polyline";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  View,
+  Text,
   StyleSheet,
-  View
+  TouchableOpacity,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
@@ -191,6 +193,8 @@ export default function NavigationScreen() {
   }
 
   const [selectedMarker, setSelectedMarker] = useState<any>(null);
+  const [isLiveSharing, setIsLiveSharing] =
+  useState(false);
   
   const [
     selectedRouteCoordinates,
@@ -214,7 +218,8 @@ const [routeCoordinates, setRouteCoordinates] =
     recommendedRoute,
     setRecommendedRoute,
   ] = useState<any>(null);
-  
+  const [showLegend, setShowLegend] =
+  useState(false);
   const [
     sameRiskRoutes,
     setSameRiskRoutes,
@@ -229,6 +234,9 @@ const [routeCoordinates, setRouteCoordinates] =
     selectedRoute,
     setSelectedRoute,
   ] = useState<any>(null);
+
+
+
   // =========================================
 // TRACKING MODE STATES
 // =========================================
@@ -240,6 +248,8 @@ type TrackingSheetState =
 
 const [isNavigating, setIsNavigating] =
 useState(false);
+
+
 const [
   trackingState,
   setTrackingState,
@@ -328,6 +338,20 @@ const handleEndNavigation = () => {
   setIsExpanded(false);
 
   setTrackingState("peek");
+
+  setSelectedRoute(null);
+
+  setRecommendedRoute(null);
+
+  setAlternativeRouteRisks([]);
+
+  setAlternativeRoutes([]);
+
+  setSelectedRouteCoordinates([]);
+
+  setRouteCoordinates([]);
+
+  setIsLiveSharing(false);
 };
 
   async function fetchAlternativeRoutes() {
@@ -911,6 +935,51 @@ console.log(
   );
 })}</MapView>
 
+<TouchableOpacity
+  style={styles.legendButton}
+  onPress={() =>
+    setShowLegend(prev => !prev)
+  }
+>
+  <Text style={styles.legendButtonText}>
+    ⓘ Legend
+  </Text>
+</TouchableOpacity>
+
+
+{showLegend && (
+  <View style={styles.legendContainer}>
+    <Text style={styles.legendTitle}>
+      Map Legend
+    </Text>
+
+    <Text style={styles.legendItem}>
+      🔵 User Location
+    </Text>
+
+    <Text style={styles.legendItem}>
+      🟢 Safe
+    </Text>
+
+    <Text style={styles.legendItem}>
+      🟡 Alert
+    </Text>
+
+    <Text style={styles.legendItem}>
+      🟠 Warning
+    </Text>
+
+    <Text style={styles.legendItem}>
+      🔴 Critical
+    </Text>
+
+    <Text style={styles.legendItem}>
+      📍 Destination
+    </Text>
+  </View>
+)}
+
+
 <SensorInfoCard
   selectedMarker={selectedMarker}
 />
@@ -936,9 +1005,17 @@ console.log(
     setIsExpanded(true);
   }}
   onRouteSelect={handleRouteSelect}
-  onChangeRoute={() =>
-    setIsExpanded(true)
-  }
+  onChangeRoute={() => {
+    setIsNavigating(false);
+  
+    setShowFloodModal(true);
+  
+    setHasViewedAlternatives(true);
+  
+    setIsExpanded(true);
+  
+    setTrackingState("peek");
+  }}
 
   // NEW
   isNavigating={isNavigating}
@@ -950,6 +1027,9 @@ console.log(
   onEndNavigation={
     handleEndNavigation
   }
+
+  isLiveSharing={isLiveSharing}
+setIsLiveSharing={setIsLiveSharing}
 
 />
 
@@ -988,6 +1068,69 @@ const styles = StyleSheet.create({
   routeText: {
     marginTop: 5,
     color: "#666",
+  },
+  legendButton: {
+    position: "absolute",
+  
+    top: 120,
+  
+    right: 16,
+  
+    backgroundColor: "#FFFFFF",
+  
+    paddingHorizontal: 14,
+  
+    paddingVertical: 10,
+  
+    borderRadius: 20,
+  
+    elevation: 6,
+  
+    zIndex: 99999,
+  },
+  
+  legendButtonText: {
+    fontWeight: "700",
+  
+    color: "#374151",
+  },
+  
+  legendContainer: {
+    position: "absolute",
+  
+    top: 170,
+  
+    right: 16,
+  
+    backgroundColor: "#FFFFFF",
+  
+    padding: 14,
+  
+    borderRadius: 12,
+  
+    elevation: 6,
+  
+    zIndex: 99999,
+  
+    minWidth: 170,
+  },
+  
+  legendTitle: {
+    fontWeight: "700",
+  
+    fontSize: 16,
+  
+    marginBottom: 10,
+  
+    color: "#111827",
+  },
+  
+  legendItem: {
+    fontSize: 14,
+  
+    marginBottom: 6,
+  
+    color: "#374151",
   },
   
 });
