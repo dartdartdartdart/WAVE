@@ -69,7 +69,7 @@ type Props = {
   onTrackingStateChange: (
     state: TrackingSheetState
   ) => void;
-
+  isFloodMode: boolean;
   onStartNavigation: () => void;
 
   onEndNavigation: () => void;
@@ -135,7 +135,7 @@ export default function RouteBottomSheet({
   setIsLiveSharing,
   routePreference,
 setRoutePreference,
-  
+isFloodMode,
   }: Props){
 
     const animatedHeight = useRef(
@@ -798,23 +798,30 @@ return (
 >
       {isInitialState && (
   <>
-    <Text style={styles.title}>
-      Flood Risk Detected
-    </Text>
+   <Text style={styles.title}>
+  {isFloodMode
+    ? "Flood Risk Detected"
+    : "Available Routes"}
+</Text>
 
-    <Text style={styles.risk}>
-      Risk Level: {routeRisk}
-    </Text>
+{isFloodMode && (
+  <Text style={styles.risk}>
+    Risk Level: {routeRisk}
+  </Text>
+)}
 
-    <Text style={styles.description}>
-      Review safer route options below.
-    </Text>
+<Text style={styles.description}>
+  {isFloodMode
+    ? "Review safer route options below."
+    : "Choose your preferred route type."}
+</Text>
   </>
 )}
 
        
        
-{recommendedRoute?.reasons?.length > 0 && (
+{isFloodMode &&
+ recommendedRoute?.reasons?.length > 0 && (
   <View style={styles.whyBox}>
     <Text style={styles.whyTitle}>
       Algorithm Reasoning
@@ -857,7 +864,8 @@ return (
   </>
 )}
 
-{isExpandedState &&
+{isFloodMode &&
+ isExpandedState &&
  sameRiskRoutes && (
           <View style={styles.notice}>
             <Text style={styles.noticeText}>

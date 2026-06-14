@@ -183,7 +183,14 @@ const [routeCoordinates, setRouteCoordinates] =
     "flood" |
     "transport" |
     "private"
+
+    
   >("flood");
+
+  const [
+    isFloodMode,
+    setIsFloodMode,
+  ] = useState(true);
 
 
 
@@ -340,7 +347,9 @@ const handleEndNavigation = () => {
       "START ANALYZING ALTERNATIVE ROUTES"
     );
     
-   
+    console.log(
+      "FETCHING ALTERNATIVE ROUTES"
+    );
 
     const {
       analyzedRoutes: analyzed,
@@ -350,6 +359,20 @@ const handleEndNavigation = () => {
       data.routes,
       markers
     );
+
+    const isFlood =
+  analyzed.every(
+    route => route.risk !== "Safe"
+  );
+
+setIsFloodMode(isFlood);
+
+console.log(
+  "OPERATING MODE:",
+  isFlood
+    ? "FLOOD MODE"
+    : "NORMAL MODE"
+);
 
     
     console.log(
@@ -371,6 +394,8 @@ const handleEndNavigation = () => {
     setRecommendedRoute(
       recommendedRoute
     );
+
+    setShowFloodModal(true);
 
 
 
@@ -494,9 +519,9 @@ console.log(
     setRouteRisk(highestRisk);
 
     if (highestRisk !== "Safe") {
-      setShowFloodModal(true);
       console.log(
-        "SHOWING FLOOD MODAL"
+        "OLD ROUTE ANALYSIS DETECTED:",
+        highestRisk
       );
     }
 
@@ -579,7 +604,19 @@ if (highestRisk !== "Safe") {
     });
   }, [location]);
 
-  
+  useEffect(() => {
+    if (
+      location &&
+      destination &&
+      markers.length > 0
+    ) {
+      fetchAlternativeRoutes();
+    }
+  }, [
+    location,
+    destination,
+    markers,
+  ]);
  
   useEffect(() => {
     console.log("NAVIGATION SCREEN MOUNTED");
@@ -682,9 +719,9 @@ if (highestRisk !== "Safe") {
       recommendedRoute,
     } = rerankRoutes(
       storedAnalyzedRoutes,
-      routePreference
+      routePreference,
+      isFloodMode
     );
-  
     setAlternativeRouteRisks(
       routes
     );
@@ -696,6 +733,7 @@ if (highestRisk !== "Safe") {
   }, [
     routePreference,
     storedAnalyzedRoutes,
+    isFloodMode,
   ]);
   
   return (
@@ -707,22 +745,24 @@ if (highestRisk !== "Safe") {
         
   onPlaceSelected={(newDestination) => {
     setDestination(newDestination);
-  
+
     setSelectedRoute(null);
-  
+    
     setSelectedRouteCoordinates([]);
-  
+    
     setRouteCoordinates([]);
-  
+    
     setAlternativeRoutes([]);
-  
+    
     setAlternativeRouteRisks([]);
-  
+    
     setRecommendedRoute(null);
-  
+    
     setSameRiskRoutes(false);
-  
-    setShowFloodModal(true);
+    
+    setHasViewedAlternatives(true);
+    
+    setIsExpanded(true);
   
     mapRef.current?.animateToRegion({
       latitude: newDestination.latitude,
@@ -965,7 +1005,7 @@ routePreference={routePreference}
 setRoutePreference={
   setRoutePreference
 }
-
+isFloodMode={isFloodMode}
 />
 
 </View>

@@ -345,11 +345,87 @@ export const transportRoads = [
     preference:
       | "flood"
       | "transport"
-      | "private"
+      | "private",
+
+      isFloodMode: boolean
   ) {
     const sorted = [...routes];
   
     sorted.sort((a, b) => {
+      if (!isFloodMode) {
+
+        /*
+          ⚡ FASTEST
+        */
+        if (preference === "flood") {
+      
+          const aETA =
+            a.routeData?.legs?.[0]?.duration?.value
+            ?? Infinity;
+      
+          const bETA =
+            b.routeData?.legs?.[0]?.duration?.value
+            ?? Infinity;
+      
+          if (aETA !== bETA) {
+            return aETA - bETA;
+          }
+      
+          const aDistance =
+            a.routeData?.legs?.[0]?.distance?.value
+            ?? Infinity;
+      
+          const bDistance =
+            b.routeData?.legs?.[0]?.distance?.value
+            ?? Infinity;
+      
+          return aDistance - bDistance;
+        }
+
+          /*
+    🚌 PUBLIC
+  */
+  if (preference === "transport") {
+
+    const overlapDiff =
+      (b.transportOverlap ?? 0)
+      - (a.transportOverlap ?? 0);
+
+    if (overlapDiff !== 0) {
+      return overlapDiff;
+    }
+
+    const aETA =
+      a.routeData?.legs?.[0]?.duration?.value
+      ?? Infinity;
+
+    const bETA =
+      b.routeData?.legs?.[0]?.duration?.value
+      ?? Infinity;
+
+    return aETA - bETA;
+  }
+    /*
+    🚗 PRIVATE
+  */
+    const overlapDiff =
+    (a.transportOverlap ?? 0)
+    - (b.transportOverlap ?? 0);
+
+  if (overlapDiff !== 0) {
+    return overlapDiff;
+  }
+
+  const aETA =
+    a.routeData?.legs?.[0]?.duration?.value
+    ?? Infinity;
+
+  const bETA =
+    b.routeData?.legs?.[0]?.duration?.value
+    ?? Infinity;
+
+  return aETA - bETA;
+}
       /*
         FLOOD SAFEST
       */
