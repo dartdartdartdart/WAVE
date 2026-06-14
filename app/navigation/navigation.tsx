@@ -2,6 +2,15 @@ import * as Location from "expo-location";
 import { useRef } from "react";
 import RouteBottomSheet from "./components/RouteBottomSheet";
 
+
+
+import {
+  analyzeRoutes,
+  rerankRoutes,
+  getDistanceKm,
+  calculateTransportOverlap,
+} from "./components/RouteScoring";
+
 import polyline from "@mapbox/polyline";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -36,85 +45,12 @@ function getMarkerColor(tier: string): string {
       return "gray";
   }
 }
-function calculateRouteRisk(
-  coordinates: any[],
-  markers: any[]
-) {
-  let highestRisk = "Safe";
 
-  markers.forEach((sensor) => {
-    let closestDistance = Infinity;
 
-    coordinates.forEach((point) => {
-      const distance = getDistanceKm(
-        point[0],
-        point[1],
-        sensor.lat,
-        sensor.lng
-      );
 
-      if (distance < closestDistance) {
-        closestDistance = distance;
-      }
-    });
-    console.log(
-      sensor.id,
-      sensor.risk_tier,
-      "CLOSEST:",
-      closestDistance.toFixed(2),
-      "km"
-    );
 
-    if (closestDistance <= 5) {
-      if (sensor.risk_tier === "Critical") {
-        highestRisk = "Critical";
-      } else if (
-        sensor.risk_tier === "Warning" &&
-        highestRisk !== "Critical"
-      ) {
-        highestRisk = "Warning";
-      } else if (
-        sensor.risk_tier === "Alert" &&
-        highestRisk === "Safe"
-      ) {
-        highestRisk = "Alert";
-      }
-    }
-  });
 
-  return highestRisk;
-}
 
-function getDistanceKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-) {
-  const R = 6371;
-
-  const dLat =
-    ((lat2 - lat1) * Math.PI) / 180;
-
-  const dLon =
-    ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) *
-      Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  const c =
-    2 * Math.atan2(
-      Math.sqrt(a),
-      Math.sqrt(1 - a)
-    );
-
-  return R * c;
-}
 export default function NavigationScreen() {
 
   const {
@@ -200,6 +136,11 @@ export default function NavigationScreen() {
     selectedRouteCoordinates,
     setSelectedRouteCoordinates,
   ] = useState<any[]>([]);
+  const [
+    storedAnalyzedRoutes,
+    setStoredAnalyzedRoutes,
+  ] = useState<any[]>([]);
+
   const [markers, setMarkers] = useState<any[]>([]);
   const [hasViewedAlternatives, setHasViewedAlternatives] =
   useState(false);
@@ -234,6 +175,15 @@ const [routeCoordinates, setRouteCoordinates] =
     selectedRoute,
     setSelectedRoute,
   ] = useState<any>(null);
+
+  const [
+    routePreference,
+    setRoutePreference,
+  ] = useState<
+    "flood" |
+    "transport" |
+    "private"
+  >("flood");
 
 
 
@@ -390,89 +340,41 @@ const handleEndNavigation = () => {
       "START ANALYZING ALTERNATIVE ROUTES"
     );
     
-    const analyzedRoutes = data.routes.map(
-      (route: any) => {
-    
-        const decoded = polyline.decode(
-          route.overview_polyline.points
-        );
-    
-        const risk = calculateRouteRisk(
-          decoded,
-          markers
-        );
-    
-        console.log(
-          "ROUTE:",
-          route.summary
-        );
-    
-        console.log(
-          "RISK:",
-          risk
-        );
-    
-        return {
-          summary: route.summary,
-          risk,
-          routeData: route,
-        };
-      }
+   
+
+    const {
+      analyzedRoutes: analyzed,
+      recommendedRoute,
+      sameRiskRoutes,
+    } = analyzeRoutes(
+      data.routes,
+      markers
     );
+
     
     console.log(
       "ANALYZED ROUTES:",
-      analyzedRoutes
+      analyzed
     );
     
     setAlternativeRouteRisks(
-      analyzedRoutes
+      analyzed
     );
-    /* RECOMMENDATION LOGIC */
-
-const riskScore: any = {
-  Safe: 0,
-  Alert: 1,
-  Warning: 2,
-  Critical: 3,
-};
-
-const uniqueRisks = [
-  ...new Set(
-    analyzedRoutes.map(
-      (route: any) => route.risk
-    )
-  ),
-];
-
-if (uniqueRisks.length === 1) {
-
-  setSameRiskRoutes(true);
-
-} else {
-
-  setSameRiskRoutes(false);
-
-  const bestRoute =
-    analyzedRoutes.reduce(
-      (best: any, current: any) =>
-
-        riskScore[current.risk] <
-        riskScore[best.risk]
-
-          ? current
-          : best
+    
+    setStoredAnalyzedRoutes(
+      analyzed
+    );
+    setSameRiskRoutes(
+      sameRiskRoutes
+    );
+    
+    setRecommendedRoute(
+      recommendedRoute
     );
 
-  setRecommendedRoute(
-    bestRoute
-  );
 
-  console.log(
-    "RECOMMENDED ROUTE:",
-    bestRoute
-  );
-}
+
+
 
     const firstRoute = data.routes[0];
 
@@ -676,6 +578,8 @@ if (highestRisk !== "Safe") {
       longitudeDelta: 0.05,
     });
   }, [location]);
+
+  
  
   useEffect(() => {
     console.log("NAVIGATION SCREEN MOUNTED");
@@ -767,6 +671,32 @@ if (highestRisk !== "Safe") {
     "SHOW FLOOD MODAL STATE:",
     showFloodModal
   );
+
+  useEffect(() => {
+    if (storedAnalyzedRoutes.length === 0) {
+      return;
+    }
+  
+    const {
+      routes,
+      recommendedRoute,
+    } = rerankRoutes(
+      storedAnalyzedRoutes,
+      routePreference
+    );
+  
+    setAlternativeRouteRisks(
+      routes
+    );
+  
+    setRecommendedRoute(
+      recommendedRoute
+    );
+  
+  }, [
+    routePreference,
+    storedAnalyzedRoutes,
+  ]);
   
   return (
     <View style={styles.container}>
@@ -1030,6 +960,11 @@ console.log(
 
   isLiveSharing={isLiveSharing}
 setIsLiveSharing={setIsLiveSharing}
+
+routePreference={routePreference}
+setRoutePreference={
+  setRoutePreference
+}
 
 />
 

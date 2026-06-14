@@ -87,7 +87,21 @@ type Props = {
 setIsLiveSharing:
   React.Dispatch<
     React.SetStateAction<boolean>
+
+
   >;
+
+  routePreference:
+  | "flood"
+  | "transport"
+  | "private";
+
+setRoutePreference: (
+  value:
+    | "flood"
+    | "transport"
+    | "private"
+) => void;
 };
 
 
@@ -119,6 +133,8 @@ export default function RouteBottomSheet({
   
   isLiveSharing,
   setIsLiveSharing,
+  routePreference,
+setRoutePreference,
   
   }: Props){
 
@@ -570,25 +586,112 @@ return (
       />
     )}
 
+<View style={styles.preferenceContainer}>
+  <Text style={styles.preferenceTitle}>
+    Preferred Route Type
+  </Text>
 
+  <View style={styles.preferenceRow}>
 
-    {!sameRiskRoutes && (
-      <View style={styles.whyBox}>
-        <Text style={styles.whyTitle}>
-          Algorithm Reasoning
+    <TouchableOpacity
+      style={[
+        styles.preferenceButton,
+        routePreference === "flood" &&
+          styles.preferenceButtonActive,
+      ]}
+      onPress={() =>
+        setRoutePreference("flood")
+      }
+    >
+      <Text
+        style={[
+          styles.preferenceText,
+          routePreference === "flood" &&
+            styles.preferenceTextActive,
+        ]}
+      >
+        🔵 Flood Safest
+      </Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[
+        styles.preferenceButton,
+        routePreference ===
+          "transport" &&
+          styles.preferenceButtonActive,
+      ]}
+      onPress={() =>
+        setRoutePreference(
+          "transport"
+        )
+      }
+    >
+      <Text
+        style={[
+          styles.preferenceText,
+          routePreference ===
+            "transport" &&
+            styles.preferenceTextActive,
+        ]}
+      >
+        🚌 Public
+      </Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[
+        styles.preferenceButton,
+        routePreference ===
+          "private" &&
+          styles.preferenceButtonActive,
+      ]}
+      onPress={() =>
+        setRoutePreference(
+          "private"
+        )
+      }
+    >
+      <Text
+        style={[
+          styles.preferenceText,
+          routePreference ===
+            "private" &&
+            styles.preferenceTextActive,
+        ]}
+      >
+        🚗 Private
+      </Text>
+    </TouchableOpacity>
+
+  </View>
+</View>
+
+{selectedRoute?.reasons?.length > 0 && (
+  <View style={styles.whyBox}>
+    <Text style={styles.whyTitle}>
+      Algorithm Reasoning
+    </Text>
+
+    <Text style={styles.whyText}>
+      Safety Score: {selectedRoute.safetyScore}/100
+    </Text>
+
+    {selectedRoute.reasons.map(
+      (
+        reason: string,
+        index: number
+      ) => (
+        <Text
+          key={index}
+          style={styles.whyText}
+        >
+          ✓ {reason}
         </Text>
-
-        <Text style={styles.whyText}>
-          • Lowest identified flood risk
-          ({selectedRoute?.risk ?? "Unknown"})
-        </Text>
-
-        <Text style={styles.whyText}>
-          • Fastest available ETA
-          for this safety tier
-        </Text>
-      </View>
+      )
     )}
+  </View>
+)}
 
     <Text style={styles.sectionTitle}>
       Sensor Information
@@ -711,35 +814,34 @@ return (
 
        
        
-{!hasViewedAlternatives &&
- recommendedRoute &&
- !sameRiskRoutes && (
-  <>
-    <Text style={styles.sectionTitle}>
-      Recommended Route
+{recommendedRoute?.reasons?.length > 0 && (
+  <View style={styles.whyBox}>
+    <Text style={styles.whyTitle}>
+      Algorithm Reasoning
     </Text>
 
-    <RecommendedRoute
-      recommendedRoute={recommendedRoute}
-    />
+    <Text style={styles.whyText}>
+      Safety Score:{" "}
+      {recommendedRoute.safetyScore}/100
+    </Text>
 
-    <View style={styles.whyBox}>
-      <Text style={styles.whyTitle}>
-        Algorithm Reasoning
-      </Text>
-
-      <Text style={styles.whyText}>
-        • Lowest identified flood risk
-        ({recommendedRoute.risk})
-      </Text>
-
-      <Text style={styles.whyText}>
-        • Fastest available ETA
-        for this safety tier
-      </Text>
-    </View>
-  </>
+    {recommendedRoute.reasons.map(
+      (
+        reason: string,
+        index: number
+      ) => (
+        <Text
+          key={index}
+          style={styles.whyText}
+        >
+          ✓ {reason}
+        </Text>
+      )
+    )}
+  </View>
 )}
+
+
 
 
 
@@ -1122,5 +1224,56 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   
     color: "#374151",
+  },
+  preferenceContainer: {
+    marginVertical: 12,
+  },
+  
+  preferenceTitle: {
+    fontWeight: "700",
+    marginBottom: 8,
+    color: "#111827",
+  },
+  
+  preferenceRow: {
+    flexDirection: "row",
+    justifyContent:
+      "space-between",
+  },
+  
+  preferenceButton: {
+    flex: 1,
+  
+    paddingVertical: 10,
+  
+    marginHorizontal: 4,
+  
+    borderRadius: 12,
+  
+    borderWidth: 1,
+  
+    borderColor: "#D1D5DB",
+  
+    alignItems: "center",
+  
+    backgroundColor: "#FFF",
+  },
+  
+  preferenceButtonActive: {
+    backgroundColor: "#1976D2",
+  
+    borderColor: "#1976D2",
+  },
+  
+  preferenceText: {
+    fontSize: 12,
+  
+    color: "#374151",
+  
+    fontWeight: "600",
+  },
+  
+  preferenceTextActive: {
+    color: "#FFF",
   },
 });

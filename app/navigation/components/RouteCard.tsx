@@ -68,8 +68,34 @@ export default function RouteCard({
       </View>
 
       <Text style={styles.summary}>
-        {route.summary}
-      </Text>
+  {route.summary}
+</Text>
+
+{route.safetyScore !== undefined && (
+  <Text style={styles.safetyScore}>
+    Safety Score: {route.safetyScore}/100
+  </Text>
+)}
+
+{route.reasons?.length > 0 && (
+  <View style={styles.reasonContainer}>
+    {route.reasons
+      .slice(0, 2)
+      .map(
+        (
+          reason: string,
+          index: number
+        ) => (
+          <Text
+            key={index}
+            style={styles.reasonText}
+          >
+            ✓ {reason}
+          </Text>
+        )
+      )}
+  </View>
+)}
 
       {leg && (
         <>
@@ -156,5 +182,21 @@ const styles = StyleSheet.create({
     borderColor: "#1976D2",
     borderWidth: 2,
     backgroundColor: "#F0F7FF",
+  },
+  safetyScore: {
+    marginTop: 8,
+    marginBottom: 8,
+    fontWeight: "700",
+    color: "#1976D2",
+  },
+  
+  reasonContainer: {
+    marginBottom: 10,
+  },
+  
+  reasonText: {
+    color: "#4B5563",
+    fontSize: 12,
+    marginBottom: 2,
   },
 });
