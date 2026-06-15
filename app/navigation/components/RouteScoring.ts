@@ -177,7 +177,7 @@ export const transportRoads = [
     );
   
     return {
-      score,
+      score : Math.round(score),
       reasons,
     };
   }
