@@ -76,7 +76,14 @@ export default function RouteCard({
     Safety Score: {route.safetyScore}/100
   </Text>
 )}
+<Text>
+  DEBUG SCORE: {route.safetyScore}
+</Text>
 
+<Text>
+  DEBUG POLYLINE:
+  {route.routeData?.overview_polyline?.points?.slice(0, 20)}
+</Text>
 {route.reasons?.length > 0 && (
   <View style={styles.reasonContainer}>
     {route.reasons

@@ -4,6 +4,7 @@ import RouteBottomSheet from "./components/RouteBottomSheet";
 
 
 
+
 import {
   analyzeRoutes,
   rerankRoutes,
@@ -23,6 +24,9 @@ import {
 import MapView, { Marker, Polyline } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { supabase } from "../../lib/supabase";
+import { liveSharingSupabase }
+  from "../../lib/liveSharingSupabase";
+
 import SensorInfoCard from "./components/SensorInfoCard";
 
 import NavigationSearchBar from "./components/NavigationSearchBar";
@@ -165,6 +169,16 @@ const [routeCoordinates, setRouteCoordinates] =
     sameRiskRoutes,
     setSameRiskRoutes,
   ] = useState(false);
+
+
+
+const [shareCode, setShareCode] =
+  useState("");
+
+const [liveSessionId, setLiveSessionId] =
+  useState<string | null>(null);
+
+
   const [showFloodModal, setShowFloodModal] =
   useState(false);
   const [alternativeRoutes, setAlternativeRoutes] =
@@ -221,8 +235,20 @@ const [
       route.summary
     );
   
-
-
+    console.log(
+      "SELECTED SCORE:",
+      route.safetyScore
+    );
+    
+    console.log(
+      "SELECTED SUMMARY:",
+      route.summary
+    );
+    
+    console.log(
+      "SELECTED POLYLINE:",
+      route.routeData.overview_polyline.points
+    );
     const decoded =
       polyline.decode(
         route.routeData
@@ -288,21 +314,15 @@ const handleStartNavigation = () => {
 const handleEndNavigation = () => {
   setIsNavigating(false);
 
-  setShowFloodModal(false);
-
-  setHasViewedAlternatives(false);
-
-  setIsExpanded(false);
-
   setTrackingState("peek");
 
+  setShowFloodModal(true);
+
+  setHasViewedAlternatives(true);
+
+  setIsExpanded(true);
+
   setSelectedRoute(null);
-
-  setRecommendedRoute(null);
-
-  setAlternativeRouteRisks([]);
-
-  setAlternativeRoutes([]);
 
   setSelectedRouteCoordinates([]);
 
@@ -968,10 +988,8 @@ console.log(
     setShowFloodModal(false)
   }
   onViewAlternatives={() => {
-    fetchAlternativeRoutes();
-
     setHasViewedAlternatives(true);
-
+  
     setIsExpanded(true);
   }}
   onRouteSelect={handleRouteSelect}
@@ -1006,6 +1024,16 @@ setRoutePreference={
   setRoutePreference
 }
 isFloodMode={isFloodMode}
+
+destination={destination}
+
+shareCode={shareCode}
+setShareCode={setShareCode}
+
+liveSessionId={liveSessionId}
+setLiveSessionId={
+  setLiveSessionId
+}
 />
 
 </View>

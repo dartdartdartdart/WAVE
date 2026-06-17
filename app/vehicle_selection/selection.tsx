@@ -23,14 +23,23 @@ export default function HomeScreen() {
   ];
 
   const [selectedVehicle, setSelectedVehicle] =
-    useState("Select Vehicle");
+    useState("");
 
   const [isOpen, setIsOpen] = useState(false);
 
   const [customVehicle, setCustomVehicle] =
     useState("");
 
+  const canContinue =
+    selectedVehicle !== "" &&
+    (selectedVehicle !== "Other" ||
+      customVehicle.trim() !== "");
+
   const handleContinue = () => {
+    if (!canContinue) {
+      return;
+    }
+
     const vehicle =
       selectedVehicle === "Other"
         ? customVehicle
@@ -58,7 +67,7 @@ export default function HomeScreen() {
           onPress={() => setIsOpen(!isOpen)}
         >
           <Text style={styles.dropdownText}>
-            {selectedVehicle}
+            {selectedVehicle || "Select Vehicle"}
           </Text>
 
           <Text style={styles.arrow}>
@@ -95,8 +104,13 @@ export default function HomeScreen() {
         )}
 
         <TouchableOpacity
-          style={styles.continueButton}
+          style={[
+            styles.continueButton,
+            !canContinue &&
+              styles.disabledButton,
+          ]}
           onPress={handleContinue}
+          disabled={!canContinue}
         >
           <Text style={styles.continueText}>
             Continue
@@ -104,7 +118,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <View style={styles.navigationRow}>
-
           <TouchableOpacity
             onPress={() => router.back()}
           >
@@ -113,7 +126,9 @@ export default function HomeScreen() {
             </Text>
           </TouchableOpacity>
 
-          <View style={styles.paginationContainer}>
+          <View
+            style={styles.paginationContainer}
+          >
             <View style={styles.dot} />
             <View style={styles.dot} />
             <View style={styles.dot} />
@@ -122,14 +137,20 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             onPress={handleContinue}
+            disabled={!canContinue}
           >
-            <Text style={styles.navText}>
+            <Text
+              style={[
+                styles.navText,
+                !canContinue && {
+                  color: "#BDBDBD",
+                },
+              ]}
+            >
               Continue
             </Text>
           </TouchableOpacity>
-
         </View>
-
       </View>
     </SafeAreaView>
   );
@@ -171,7 +192,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 16,
-
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -193,7 +213,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 10,
     overflow: "hidden",
-
     borderWidth: 1,
     borderColor: "#D9F7F4",
   },
@@ -228,6 +247,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 18,
     alignItems: "center",
+  },
+
+  disabledButton: {
+    backgroundColor: "#BDBDBD",
   },
 
   continueText: {

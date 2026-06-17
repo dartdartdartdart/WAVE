@@ -147,7 +147,9 @@ export const transportRoads = [
       score -= etaDifference * 2;
   
       reasons.push(
-        `${etaDifference} minute longer travel time.`
+     `${Math.round(etaDifference)} minute${
+  Math.round(etaDifference) !== 1 ? "s" : ""
+} longer travel time.`
       );
     } else {
       reasons.push(
@@ -240,7 +242,7 @@ export const transportRoads = [
     );
   
     const analyzedRoutes = routes.map(
-      (route: any) => {
+      (route: any, index: number) => {
         const decoded = polyline.decode(
           route.overview_polyline.points
         );
@@ -272,19 +274,24 @@ export const transportRoads = [
         );
   
         return {
+          id:
+            route.overview_polyline?.points ??
+            `route-${index}`,
+        
           summary: route.summary,
-  
+        
           risk,
-  
+        
           routeData: route,
-  
+        
           safetyScore: score,
-  
+        
           reasons,
-  
+        
           criticalSensors,
+        
           transportOverlap:
-  calculateTransportOverlap(route),
+            calculateTransportOverlap(route),
         };
       }
     );
@@ -339,6 +346,9 @@ export const transportRoads = [
       sameRiskRoutes,
     };
   }
+
+
+
 
   export function rerankRoutes(
     routes: any[],

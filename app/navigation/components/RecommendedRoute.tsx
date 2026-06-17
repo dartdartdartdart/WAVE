@@ -12,6 +12,21 @@ type Props = {
 export default function RecommendedRoute({
   recommendedRoute,
 }: Props) {
+
+  console.log(
+    "RECOMMENDED SCORE:",
+    recommendedRoute.safetyScore
+  );
+  
+  console.log(
+    "RECOMMENDED SUMMARY:",
+    recommendedRoute.summary
+  );
+  
+  console.log(
+    "RECOMMENDED POLYLINE:",
+    recommendedRoute.routeData?.overview_polyline?.points
+  );
   return (
     <View style={styles.container}>
       <Text style={styles.badge}>
@@ -32,6 +47,7 @@ export default function RecommendedRoute({
           {recommendedRoute.safetyScore}/100
         </Text>
       )}
+
 
       {recommendedRoute.reasons?.length > 0 && (
         <View style={styles.reasonBox}>

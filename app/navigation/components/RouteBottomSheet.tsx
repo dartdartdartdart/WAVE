@@ -3,7 +3,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-
+import LiveSharing from "./LiveSharing";
 import {
   Animated,
   Dimensions,
@@ -547,18 +547,7 @@ return (
     </Text>
   </TouchableOpacity>
 </View>
-<TouchableOpacity
-  style={styles.liveShareButton}
-  onPress={() =>
-    setIsLiveSharing(prev => !prev)
-  }
->
-  <Text style={styles.liveShareText}>
-    {isLiveSharing
-      ? "🟢 Live Share ON"
-      : "🔴 Live Share OFF"}
-  </Text>
-</TouchableOpacity>
+
 
 
 
@@ -893,26 +882,21 @@ return (
       </Text>
 
       {alternativeRouteRisks.map(
-        (route, index) => (
-          <RouteCard
-            key={
-              route.routeData
-                ?.overview_polyline?.points
-            }
-            route={route}
-            index={index}
-            isSelected={
-              selectedRoute?.routeData
-                ?.overview_polyline?.points ===
-              route.routeData
-                ?.overview_polyline?.points
-            }
-            onSelect={() =>
-              onRouteSelect(route)
-            }
-          />
-        )
-      )}
+  (route, index) => (
+    <RouteCard
+      key={route.id}
+      route={route}
+      index={index}
+      isSelected={
+        selectedRoute?.id === route.id
+      }
+      onSelect={() => {
+        onRouteSelect(route)
+      }}
+    />
+  )
+)}
+      
     </>
 )}
 
