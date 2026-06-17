@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    marginTop: 10,
+    marginTop: 90,
     marginBottom: 25,
   },
 
